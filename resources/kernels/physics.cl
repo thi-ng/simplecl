@@ -1,5 +1,5 @@
 /**
- * OpenCL 2D verlet physics demo kernel
+ * OpenCL 2D verlet physics demo kernels
  *
  * v0.1.0 - initial skeleton implementation
  * v0.1.1 - added particle locking & circle constraints
