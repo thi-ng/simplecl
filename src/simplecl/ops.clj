@@ -26,23 +26,28 @@
   Instantiates a CL buffer for each spec with each having the following keys:
 
       :usage - buffer usage (default :readwrite)
-      :type - default :float
-      :size - absolute size or
+      :type - buffer type (defaults to :float unless :wrap is present)
+       :size - absolute size or
       :factor - relative size as in (* factor (int (/ n group-size)) group-size)
       :fill - optional fn to fill buffer elements with (see fill-buffer fn)
       :data - optional data seq to fill buffer with
+      :wrap - optional, existing NIO buffer or Clojure seq to fully wrap using as-clbuffer fn
 
   Returns a map with same keys and CLBuffer instances as values."
   [n group-size & {:as specs}]
   (let [n (* (int (/ n group-size)) group-size)]
     (reduce
-        (fn [acc [k {:keys [usage size factor type fill data] :or {type :float usage :readwrite}}]]
-          (let [buf (cl/make-buffer type (if size size (* factor n)) usage)]
-            (assoc acc k
-              (cond
-                fill (cl/fill-buffer buf fill)
-                data (do (cl/into-buffer buf data) (cl/rewind buf))
-                :default buf))))
+        (fn [acc [k {:keys [usage size factor type fill data wrap] :or {usage :readwrite}}]]
+          (if wrap
+            (if type
+              (assoc acc k (cl/as-clbuffer type wrap usage))
+              (assoc acc k (cl/as-clbuffer wrap usage)))
+            (let [buf (cl/make-buffer (or type :float) (if size size (* factor n)) usage)]
+              (assoc acc k
+                (cond
+                  fill (cl/fill-buffer buf fill)
+                  data (do (cl/into-buffer buf data) (cl/rewind buf))
+                  :default buf)))))
         {} specs)))
 
 (defn init-kernel
