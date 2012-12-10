@@ -6,6 +6,11 @@ Simplecl intends to enable a somewhat declarative interop approach between Cloju
 
 Simplecl is still a young project, but has been sucessfully used in production in several projects and is already (fairly) well documented.
 
+## Leiningen coordinates
+
+    :::clojure
+    [com.postspectacular/simplecl "0.1.4"]
+
 ## Usage & examples
 
 Please see the extensive doc strings, Marginalia docs and the 2D Verlet physics demo for a complete & visual example use case:
