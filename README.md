@@ -36,7 +36,7 @@ A sneak peak of an upcoming example kernel pipeline to:
 4. apply a 3D distortion filter to all points
 5. do a standard 3d > 2d camera-screen projection
 
-A short video fragment too: [attractor.mp4](http://media.postspectacular.com/2012/simplecl/20121205-attractor-grad-hd720.mp4)
+A short video fragment too: [attractor.mp4](http://media.postspectacular.com/2012/simplecl/20121205-attractor-grad-hd720.mp4) (10M points/frame, ~780-840ms/frame)
 
 More examples & documentation will be added ASAP.
 
