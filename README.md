@@ -19,6 +19,8 @@ Running the command below will run a basic [2d cloth simulation](https://bitbuck
 
 A video of three different variations is here: [verlet-cloth-sim.mp4](http://media.postspectacular.com/2012/simplecl/20121208-gridx-hd720.mp4)
 
+This demo is also showcasing usage & integration of the [structgen](http://hg.postspectacular.com/structgen) partner library to ease the task of aligning nested data structures in an OpenCL compatible way.
+
 ### 3D Strange attractor
 
 A sneak peak of an upcoming example kernel pipeline to:
