@@ -1,4 +1,6 @@
 (ns simplecl.verlet-test
+  "2D Verlet physics cloth simulation example."
+  ^{:author "Karsten Schmidt"}
   (:import
     [java.awt Color Graphics2D RenderingHints]
     [java.awt.image BufferedImage]
