@@ -8,16 +8,16 @@ Simplecl is still a young project, but has been sucessfully used in production i
 
 ## Usage & examples
 
-Please see the extensive doc strings, marginalia docs and the 2D Verlet physics demo for a complete & visual example use case:
+Please see the extensive doc strings, Marginalia docs and the 2D Verlet physics demo for a complete & visual example use case:
 
 ### Verlet cloth sim
 
-Running the command below will run a basic 2d cloth simulation with 40,000 particles & 80,000 springs and generate an image sequence of 120 PNGs in the `/export` sub-directory.
+Running the command below will run a basic [2d cloth simulation](https://bitbucket.org/postspectacular/simplecl/src/tip/test/simplecl/verlet_test.clj) with 40,000 particles & 80,000 springs and generate an image sequence of 120 PNGs in the `/export` sub-directory.
 
     :::bash
     lein with-profile test run -m simplecl.verlet-test
 
-A video of three different variations of this demo can be downloaded from here: [verlet-cloth-sim.mp4](http://media.postspectacular.com/2012/simplecl/20121208-gridx-hd720.mp4)
+A video of three different variations is here: [verlet-cloth-sim.mp4](http://media.postspectacular.com/2012/simplecl/20121208-gridx-hd720.mp4)
 
 ### 3D Strange attractor
 
