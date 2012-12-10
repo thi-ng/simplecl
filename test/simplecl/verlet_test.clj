@@ -153,19 +153,18 @@
         (assoc state :pipeline (make-pipeline state))))))
 
 (defn update-pipeline
-  "Releases the current OpenCL particle buffer and generates a new one for
-  the current particles and builds an updated OpenCL processing pipeline.
+  "Releases the current OpenCL particle & spring buffers and generates new ones for
+  the current particles/spring, then builds an updated OpenCL processing pipeline.
   Returns updated physics state map."
-  [{:keys [cl-state grid p-struct s-struct p-buf q-buf s-buf c-buf
-           nump nums numc bounds gravity drag iter] :as state}]
+  [{:keys [cl-state grid p-struct s-struct p-buf s-buf] :as state}]
   (cl/with-state cl-state
     (cl/release p-buf s-buf)
     (let [{:keys [particles springs]} grid
-          cp (count particles)
-          cs (count springs)
-          p-buf (cl/as-clbuffer (gen/encode p-struct {:particles particles}) :readwrite)
-          s-buf (cl/as-clbuffer (gen/encode s-struct {:springs springs}) :readonly)
-          state (assoc state :p-buf p-buf :s-buf s-buf :nump cp :nums cs)]
+          state (merge state
+                  (ops/init-buffers 1 1
+                    :p-buf {:wrap (gen/encode p-struct {:particles particles})}
+                    :s-buf {:wrap (gen/encode s-struct {:springs springs}) :usage :readonly})
+                  {:nump (count particles) :nums (count springs)})]
       (assoc state :pipeline (make-pipeline state)))))
 
 (defn physics-time-step
@@ -286,4 +285,4 @@
             (time (physics-time-step step (:pipeline state) false))
             (recur (rest iter) state)))))))
 
-(defn -main [& args] (run-sim physics-state 5 600 5 1920 1080))
+(defn -main [& args] (run-sim physics-state 200 600 5 1920 1080))
