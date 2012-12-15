@@ -285,4 +285,4 @@
             (time (physics-time-step step (:pipeline state) false))
             (recur (rest iter) state)))))))
 
-(defn -main [& args] (run-sim physics-state 200 600 5 1920 1080))
+(defn -main [& args] (run-sim physics-state 5 600 5 1920 1080))
