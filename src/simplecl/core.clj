@@ -359,10 +359,10 @@
   `(defmethod ^{:tag CLBuffer :private true} fill-buffer ~type
      [^CLBuffer b# f#]
      (let [^{:tag ~type} nb# (.getBuffer b#)]
-       (loop [pos# (.position nb#)]
-         (when (pos? (.remaining nb#))
+       (loop [pos# (.position nb#) remaining# (.remaining nb#)]
+         (when (pos? remaining#)
            (.put nb# (~cast (f# pos#)))
-           (recur (inc pos#))))
+           (recur (inc pos#) (dec remaining#))))
        (.rewind nb#))
      b#))
 
