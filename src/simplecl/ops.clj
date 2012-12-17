@@ -197,12 +197,17 @@
       :verbose - pprint compiled queue and execution time (default false)
       :release - automatic release of all buffers (default true)"
   [{:keys [queue buffers final-out final-size]} &
-   {:keys [final-size verbose release] :or {release true}}]
+   {:keys [final-size final-type verbose release] :or {release true}}]
   (if verbose
     (do (pprint queue) (time (apply cl/enqueue queue)))
     (apply cl/enqueue queue))
   (if final-out
     (let [^Buffer nb (cl/nio-buffer final-out)
+          nb (condp = final-type
+               :int (.asIntBuffer nb)
+               :float (.asFloatBuffer nb)
+               :double (.asDoubleBuffer nb)
+               nb)
           final-size (or final-size (.capacity nb))
           ^Buffer result (cl/slice nb final-size)]
       (when release (apply cl/release buffers))
