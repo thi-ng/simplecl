@@ -9,7 +9,7 @@ Simplecl is still a young project, but has been sucessfully used in production i
 ## Leiningen coordinates
 
     :::clojure
-    [com.postspectacular/simplecl "0.1.4"]
+    [com.postspectacular/simplecl "0.1.5"]
 
 ## Usage & examples
 
