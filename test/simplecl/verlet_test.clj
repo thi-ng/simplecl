@@ -109,7 +109,7 @@
   The ConstrainParticles phase includes a synchronous read operation of the
   particle buffer, ensuring the OpenCL computation is complete before
   returning to Clojure."
-  [& {:keys [p-buf q-buf s-buf c-buf bounds gravity drag nump nums numc iter]}]
+  [{:keys [p-buf q-buf s-buf c-buf bounds gravity drag nump nums numc iter]}]
   (ops/compile-pipeline :steps
     (concat
      [{:name "ParticleUpdate" :in [p-buf bounds gravity] :out q-buf
@@ -138,58 +138,34 @@
             p-struct (gen/make-struct :Particles [:particles :Particle2 nump])
             s-struct (gen/make-struct :Springs [:springs :Spring nums])
             c-struct (gen/make-struct :Circles [:circles :Circle numc])
-            p-buf (cl/as-clbuffer (gen/encode p-struct {:particles particles}) :readwrite)
-            q-buf (cl/as-clbuffer (gen/encode p-struct {}) :readwrite)
-            s-buf (cl/as-clbuffer (gen/encode s-struct {:springs springs}) :readonly)
-            c-buf (cl/as-clbuffer (gen/encode c-struct {:circles circles}) :readonly)
-            bounds (cl/as-clbuffer :float bounds :readonly)
-            gravity (cl/as-clbuffer :float gravity :readonly)
-            pipeline (make-pipeline
-                       :p-buf p-buf :q-buf q-buf :s-buf s-buf :c-buf c-buf
-                       :bounds bounds :gravity gravity :drag drag
-                       :nump nump :nums nums :numc numc :iter iter)]
-        {:cl-state cl-state
-         :p-struct p-struct
-         :s-struct s-struct
-         :c-struct c-struct
-         :p-buf p-buf
-         :q-buf q-buf
-         :s-buf s-buf
-         :c-buf c-buf
-         :pipeline pipeline
-         :grid grid
-         :circles circles
-         :bounds bounds
-         :gravity gravity
-         :drag drag
-         :iter iter
-         :nump nump
-         :nums nums
-         :numc numc}))))
+            state (merge
+                    {:cl-state cl-state
+                     :p-struct p-struct :s-struct s-struct :c-struct c-struct
+                     :drag drag :nump nump :nums nums :numc numc :iter iter
+                     :grid grid :circles circles}
+                    (ops/init-buffers 1 1
+                      :p-buf {:wrap (gen/encode p-struct {:particles particles})}
+                      :q-buf {:wrap (gen/encode p-struct {})}
+                      :s-buf {:wrap (gen/encode s-struct {:springs springs}) :usage :readonly}
+                      :c-buf {:wrap (gen/encode c-struct {:circles circles}) :usage :readonly}
+                      :bounds {:wrap bounds :type :float :usage :readonly}
+                      :gravity {:wrap gravity :type :float :usage :readonly}))]
+        (assoc state :pipeline (make-pipeline state))))))
 
 (defn update-pipeline
-  "Releases the current OpenCL particle buffer and generates a new one for
-  the current particles and builds an updated OpenCL processing pipeline.
+  "Releases the current OpenCL particle & spring buffers and generates new ones for
+  the current particles/spring, then builds an updated OpenCL processing pipeline.
   Returns updated physics state map."
-  [{:keys [cl-state grid p-struct s-struct p-buf q-buf s-buf c-buf
-           nump nums numc bounds gravity drag iter] :as state}]
+  [{:keys [cl-state grid p-struct s-struct p-buf s-buf] :as state}]
   (cl/with-state cl-state
     (cl/release p-buf s-buf)
     (let [{:keys [particles springs]} grid
-          cp (count particles)
-          cs (count springs)
-          p-buf (cl/as-clbuffer (gen/encode p-struct {:particles particles}) :readwrite)
-          s-buf (cl/as-clbuffer (gen/encode s-struct {:springs springs}) :readonly)
-          pipeline (make-pipeline
-                     :p-buf p-buf :q-buf q-buf :s-buf s-buf :c-buf c-buf
-                     :bounds bounds :gravity gravity :drag drag
-                     :nump cp :nums cs :numc numc :iter iter)]
-      (assoc state
-        :p-buf p-buf
-        :s-buf s-buf
-        :nump cp
-        :nums cs
-        :pipeline pipeline))))
+          state (merge state
+                  (ops/init-buffers 1 1
+                    :p-buf {:wrap (gen/encode p-struct {:particles particles})}
+                    :s-buf {:wrap (gen/encode s-struct {:springs springs}) :usage :readonly})
+                  {:nump (count particles) :nums (count springs)})]
+      (assoc state :pipeline (make-pipeline state)))))
 
 (defn physics-time-step
   "Executes `iter` iterations of the current OpenCL processing pipeline."

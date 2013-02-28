@@ -4,7 +4,7 @@
   <groupId>com.postspectacular</groupId>
   <artifactId>simplecl</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.4</version>
+  <version>0.1.5</version>
   <name>simplecl</name>
   <description>Clojure wrapper &amp; highlevel processing pipeline ops for JOCL/OpenCL.</description>
   <url>http://hg.postspectacular.com/simplecl</url>
@@ -36,9 +36,9 @@
   <repositories>
     <repository>
       <id>central</id>
-      <url>http://repo1.maven.org/maven2</url>
+      <url>http://repo1.maven.org/maven2/</url>
       <snapshots>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
       </snapshots>
       <releases>
         <enabled>true</enabled>
@@ -69,7 +69,7 @@
     <dependency>
       <groupId>com.postspectacular</groupId>
       <artifactId>structgen</artifactId>
-      <version>0.1.1</version>
+      <version>0.1.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

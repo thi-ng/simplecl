@@ -26,23 +26,28 @@
   Instantiates a CL buffer for each spec with each having the following keys:
 
       :usage - buffer usage (default :readwrite)
-      :type - default :float
-      :size - absolute size or
+      :type - buffer type (defaults to :float unless :wrap is present)
+       :size - absolute size or
       :factor - relative size as in (* factor (int (/ n group-size)) group-size)
       :fill - optional fn to fill buffer elements with (see fill-buffer fn)
       :data - optional data seq to fill buffer with
+      :wrap - optional, existing NIO buffer or Clojure seq to fully wrap using as-clbuffer fn
 
   Returns a map with same keys and CLBuffer instances as values."
   [n group-size & {:as specs}]
   (let [n (* (int (/ n group-size)) group-size)]
     (reduce
-        (fn [acc [k {:keys [usage size factor type fill data] :or {type :float usage :readwrite}}]]
-          (let [buf (cl/make-buffer type (if size size (* factor n)) usage)]
-            (assoc acc k
-              (cond
-                fill (cl/fill-buffer buf fill)
-                data (do (cl/into-buffer buf data) (cl/rewind buf))
-                :default buf))))
+        (fn [acc [k {:keys [usage size factor type fill data wrap] :or {usage :readwrite}}]]
+          (if wrap
+            (if type
+              (assoc acc k (cl/as-clbuffer type wrap usage))
+              (assoc acc k (cl/as-clbuffer wrap usage)))
+            (let [buf (cl/make-buffer (or type :float) (if size size (* factor n)) usage)]
+              (assoc acc k
+                (cond
+                  fill (cl/fill-buffer buf fill)
+                  data (do (cl/into-buffer buf data) (cl/rewind buf))
+                  :default buf)))))
         {} specs)))
 
 (defn init-kernel
@@ -192,12 +197,17 @@
       :verbose - pprint compiled queue and execution time (default false)
       :release - automatic release of all buffers (default true)"
   [{:keys [queue buffers final-out final-size]} &
-   {:keys [final-size verbose release] :or {release true}}]
+   {:keys [final-size final-type verbose release] :or {release true}}]
   (if verbose
     (do (pprint queue) (time (apply cl/enqueue queue)))
     (apply cl/enqueue queue))
   (if final-out
     (let [^Buffer nb (cl/nio-buffer final-out)
+          nb (condp = final-type
+               :int (.asIntBuffer nb)
+               :float (.asFloatBuffer nb)
+               :double (.asDoubleBuffer nb)
+               nb)
           final-size (or final-size (.capacity nb))
           ^Buffer result (cl/slice nb final-size)]
       (when release (apply cl/release buffers))
