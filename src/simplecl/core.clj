@@ -304,7 +304,7 @@
       :global - global workgroup size (must be multiple of :local)
 
   The following example submits `buf-in` and `buf-out` asynchronously, then
-  executes `my-kernel` and finally synchronously reads back the output buffer: 
+  executes `my-kernel` and finally synchronously reads back the output buffer:
 
       (enqueue
         [buf-in :write]
@@ -373,14 +373,14 @@
 
 (defmulti into-buffer
   "Fills the remaining items (or less) of CLBuffer `b` with items
-  from the given sequence. Returns `b`. Acts directly on the
-  underlying NIO buffer and implemented as multimethod with
-  type hints for performance and to cast each item of the
-  sequence to the correct type required by `b`.
-  Implemented for byte, double, float and int buffers.
+  from the given sequence or NIO buffer. Returns `b`. Acts directly
+  on the underlying NIO buffer and implemented as multimethod with
+  type hints for performance and to cast each item of the sequence
+  to the correct type required by `b`. Implemented for byte, double,
+  float and int buffers.
 
   Note: Does **NOT** rewind buffer to allow filling buffer from
-  multiple seqs. You must call `rewind` before enqueueing the
+  multiple sources. You MUST call `rewind` before enqueueing the
   buffer for processing."
   (fn [^CLBuffer b seq] (class (.getBuffer b))))
 
@@ -389,10 +389,12 @@
   `(defmethod ^{:tag CLBuffer :private true} into-buffer ~type
      [^CLBuffer b# s#]
      (let [^{:tag ~type} nb# (.getBuffer b#)]
-       (loop[s# (take (.remaining nb#) s#)]
-         (when (seq s#)
-           (.put nb# (~cast (first s#)))
-           (recur (rest s#)))))
+       (if (instance? Buffer s#)
+         (.put nb# s#)
+         (loop[s# (take (.remaining nb#) s#)]
+           (when (seq s#)
+             (.put nb# (~cast (first s#)))
+             (recur (rest s#))))))
      b#))
 
 (into-buffer* ByteBuffer byte)
