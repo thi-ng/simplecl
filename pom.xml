@@ -4,7 +4,7 @@
   <groupId>com.postspectacular</groupId>
   <artifactId>simplecl</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.5</version>
+  <version>0.1.6-SNAPSHOT</version>
   <name>simplecl</name>
   <description>Clojure wrapper &amp; highlevel processing pipeline ops for JOCL/OpenCL.</description>
   <url>http://hg.postspectacular.com/simplecl</url>
