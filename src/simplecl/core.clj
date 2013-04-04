@@ -67,7 +67,7 @@
    [re]
    (proxy [Filter] []
      (accept [^CLPlatform p]
-       (not (nil? (re-matches re (.getVendor p)))))))
+       (not (nil? (re-find re (.getVendor p)))))))
 
 ;; # CL state handling
 
