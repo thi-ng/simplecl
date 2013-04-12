@@ -1,10 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.postspectacular</groupId>
   <artifactId>simplecl</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.5</version>
+  <version>0.1.6</version>
   <name>simplecl</name>
   <description>Clojure wrapper &amp; highlevel processing pipeline ops for JOCL/OpenCL.</description>
   <url>http://hg.postspectacular.com/simplecl</url>
