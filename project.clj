@@ -1,4 +1,4 @@
-(defproject com.postspectacular/simplecl "0.1.6-SNAPSHOT"
+(defproject com.postspectacular/simplecl "0.1.6"
   :description "Clojure wrapper & highlevel processing pipeline ops for JOCL/OpenCL."
   :url "http://hg.postspectacular.com/simplecl"
   :license {:name "Eclipse Public License"
