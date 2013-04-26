@@ -3,7 +3,7 @@
   <groupId>com.postspectacular</groupId>
   <artifactId>simplecl</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.6</version>
+  <version>0.1.7-SNAPSHOT</version>
   <name>simplecl</name>
   <description>Clojure wrapper &amp; highlevel processing pipeline ops for JOCL/OpenCL.</description>
   <url>http://hg.postspectacular.com/simplecl</url>
@@ -63,7 +63,7 @@
     <dependency>
       <groupId>org.clojars.toxi</groupId>
       <artifactId>jocl</artifactId>
-      <version>2.0.0-rc10</version>
+      <version>2.0.0-rc11</version>
     </dependency>
     <dependency>
       <groupId>com.postspectacular</groupId>
