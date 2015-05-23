@@ -1,4 +1,4 @@
-(ns simplecl.utils
+(ns thi.ng.simplecl.utils
   "Misc utility functions used by other simplecl namespaces."
   ^{:author "Karsten Schmidt"}
   (:import

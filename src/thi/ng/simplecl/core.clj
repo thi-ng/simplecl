@@ -1,4 +1,4 @@
-(ns simplecl.core
+(ns thi.ng.simplecl.core
   "Clojure wrappers around OpenCL & JOCL."
   ^{:author "Karsten Schmidt"}
   (:import
@@ -12,31 +12,31 @@
    [com.jogamp.common.nio Buffers]
    [java.nio Buffer ByteBuffer DoubleBuffer FloatBuffer IntBuffer])
   (:require
-   [simplecl.utils :as clu]
+   [thi.ng.simplecl.utils :as clu]
    [clojure.java.io :as io]))
 
 ;;(set! *warn-on-reflection* true)
 
 (def usage-types
   "A collection of buffer usage types required for `make-buffer`."
-  {:readonly CLMemory$Mem/READ_ONLY
+  {:readonly  CLMemory$Mem/READ_ONLY
    :readwrite CLMemory$Mem/READ_WRITE
    :writeonly CLMemory$Mem/WRITE_ONLY
-   :allocate CLMemory$Mem/ALLOCATE_BUFFER
-   :copy CLMemory$Mem/COPY_BUFFER
-   :use CLMemory$Mem/USE_BUFFER})
+   :allocate  CLMemory$Mem/ALLOCATE_BUFFER
+   :copy      CLMemory$Mem/COPY_BUFFER
+   :use       CLMemory$Mem/USE_BUFFER})
 
 (def device-types
   "Common OpenCL device types."
-  {:all CLDevice$Type/ALL
-   :cpu CLDevice$Type/CPU
-   :gpu CLDevice$Type/GPU
+  {:all         CLDevice$Type/ALL
+   :cpu         CLDevice$Type/CPU
+   :gpu         CLDevice$Type/GPU
    :accelerator CLDevice$Type/ACCELERATOR})
 
 (def build-opts
   "Common OpenCL compiler options"
-  {:fast-math "-cl-fast-relaxed-math"
-   :enable-mad "-cl-mad-enable"
+  {:fast-math       "-cl-fast-relaxed-math"
+   :enable-mad      "-cl-mad-enable"
    :no-signed-zeros "-cl-no-signed-zeros"})
 
 (def build-states

@@ -1,4 +1,4 @@
-(ns simplecl.verlet-test
+(ns thi.ng.simplecl.test.verlet
   "2D Verlet physics cloth simulation example."
   ^{:author "Karsten Schmidt"}
   (:import
@@ -6,22 +6,21 @@
     [java.awt.image BufferedImage]
     [javax.imageio ImageIO])
   (:require
-    [simplecl.core :as cl]
-    [simplecl.utils :as clu]
-    [simplecl.ops :as ops]
-    [structgen.core :as gen]
-    [structgen.parser :as p]
-    [clojure.java.io :as io])
-  (:use
-    [clojure.test]))
+    [thi.ng.simplecl.core :as cl]
+    [thi.ng.simplecl.utils :as clu]
+    [thi.ng.simplecl.ops :as ops]
+    [thi.ng.structgen.core :as sg]
+    [thi.ng.structgen.parser :as sp]
+    [clojure.java.io :as io]
+    [clojure.test :refer :all]))
 
 (def cl-program
   "Location of the OpenCL program"
   "kernels/physics.cl")
 
 ;; parse typedefs in OpenCL program and register all found struct types
-(gen/reset-registry!)
-(gen/register! (p/parse-specs (slurp (clu/resource-stream cl-program))))
+(sg/reset-registry!)
+(sg/register! (sp/parse-specs (slurp (clu/resource-stream cl-program))))
 
 (defn ensure-odd
   "Returns `x` if odd or `x+1` if `x` is even."
@@ -135,19 +134,19 @@
             nums (count springs)
             numc (count circles)
             iter (ensure-odd iter)
-            p-struct (gen/make-struct :Particles [:particles :Particle2 nump])
-            s-struct (gen/make-struct :Springs [:springs :Spring nums])
-            c-struct (gen/make-struct :Circles [:circles :Circle numc])
+            p-struct (sg/make-struct :Particles [:particles :Particle2 nump])
+            s-struct (sg/make-struct :Springs [:springs :Spring nums])
+            c-struct (sg/make-struct :Circles [:circles :Circle numc])
             state (merge
                     {:cl-state cl-state
                      :p-struct p-struct :s-struct s-struct :c-struct c-struct
                      :drag drag :nump nump :nums nums :numc numc :iter iter
                      :grid grid :circles circles}
                     (ops/init-buffers 1 1
-                      :p-buf {:wrap (gen/encode p-struct {:particles particles})}
-                      :q-buf {:wrap (gen/encode p-struct {})}
-                      :s-buf {:wrap (gen/encode s-struct {:springs springs}) :usage :readonly}
-                      :c-buf {:wrap (gen/encode c-struct {:circles circles}) :usage :readonly}
+                      :p-buf {:wrap (sg/encode p-struct {:particles particles})}
+                      :q-buf {:wrap (sg/encode p-struct {})}
+                      :s-buf {:wrap (sg/encode s-struct {:springs springs}) :usage :readonly}
+                      :c-buf {:wrap (sg/encode c-struct {:circles circles}) :usage :readonly}
                       :bounds {:wrap bounds :type :float :usage :readonly}
                       :gravity {:wrap gravity :type :float :usage :readonly}))]
         (assoc state :pipeline (make-pipeline state))))))
@@ -162,8 +161,8 @@
     (let [{:keys [particles springs]} grid
           state (merge state
                   (ops/init-buffers 1 1
-                    :p-buf {:wrap (gen/encode p-struct {:particles particles})}
-                    :s-buf {:wrap (gen/encode s-struct {:springs springs}) :usage :readonly})
+                    :p-buf {:wrap (sg/encode p-struct {:particles particles})}
+                    :s-buf {:wrap (sg/encode s-struct {:springs springs}) :usage :readonly})
                   {:nump (count particles) :nums (count springs)})]
       (assoc state :pipeline (make-pipeline state)))))
 
@@ -210,7 +209,7 @@
   "Renders the current state of the physics simulation to an image and
   exports it to the given file path."
   [^Graphics2D gfx {:keys [p-struct p-buf grid]}]
-  (let [particles (vec (:particles (gen/decode p-struct (cl/nio-buffer p-buf))))
+  (let [particles (vec (:particles (sg/decode p-struct (cl/nio-buffer p-buf))))
         rlen (:rest-len grid)]
     (doseq [{sa :a sb :b} (:springs grid)]
      (let [[ax ay] (:pos (particles sa))
@@ -244,8 +243,8 @@
                     [200 rmax 0 450]))
       :circles [{:pos [820 660] :radius 100} {:pos [1100 660] :radius 100}]
       :bounds [0 0 1919 1079]
-      :gravity [0 1.25]
-      :drag 0.02
+      :gravity [0 0.25]
+      :drag 0.99
       :iter 41)))
 
 (defn run-sim
@@ -257,11 +256,11 @@
     (physics-time-step from (:pipeline state) true)
     (let [img (make-image width height)
           gfx (.createGraphics img)]
-      (loop [iter (range from to step) state state]
+      (loop [iter (range from to step) f from state state]
         (when-let [i (first iter)]
           (clear-image gfx width height)
           (render gfx state)
-          (save-image img (format "export/gridx-%d.png" i))
+          (save-image img (format "export/gridx-%04d.png" f))
           (let [rows (get-in state [:grid :rows])
                 r3 (int (* rows 0.3333))
                 r23 (int (* rows 0.6666))
@@ -277,12 +276,12 @@
                 state (if (= i 305) (update-pipeline (assoc state :numc 0)) state)
                 state (if (seq unlock)
                         (let [{:keys [p-struct p-buf grid]} state
-                              particles (:particles (gen/decode p-struct (cl/nio-buffer p-buf)))
+                              particles (:particles (sg/decode p-struct (cl/nio-buffer p-buf)))
                               grid (assoc grid :particles particles)
                               grid (lock-particles grid unlock false)]
                           (update-pipeline (assoc state :grid grid)))
                         state)]
             (time (physics-time-step step (:pipeline state) false))
-            (recur (rest iter) state)))))))
+            (recur (rest iter) (inc f) state)))))))
 
 (defn -main [& args] (run-sim physics-state 5 600 5 1920 1080))
