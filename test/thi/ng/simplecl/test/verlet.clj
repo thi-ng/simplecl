@@ -2,17 +2,17 @@
   "2D Verlet physics cloth simulation example."
   ^{:author "Karsten Schmidt"}
   (:import
-    [java.awt Color Graphics2D RenderingHints]
-    [java.awt.image BufferedImage]
-    [javax.imageio ImageIO])
+   [java.awt Color Graphics2D RenderingHints]
+   [java.awt.image BufferedImage]
+   [javax.imageio ImageIO])
   (:require
-    [thi.ng.simplecl.core :as cl]
-    [thi.ng.simplecl.utils :as clu]
-    [thi.ng.simplecl.ops :as ops]
-    [thi.ng.structgen.core :as sg]
-    [thi.ng.structgen.parser :as sp]
-    [clojure.java.io :as io]
-    [clojure.test :refer :all]))
+   [thi.ng.simplecl.core :as cl]
+   [thi.ng.simplecl.utils :as clu]
+   [thi.ng.simplecl.ops :as ops]
+   [thi.ng.structgen.core :as sg]
+   [thi.ng.structgen.parser :as sp]
+   [clojure.java.io :as io]
+   [clojure.test :refer :all]))
 
 (def cl-program
   "Location of the OpenCL program"
@@ -38,31 +38,31 @@
   "Returns a lazy-seq of spring definitions connecting grid points
   in the following way:
 
-      a -- b -- c ...
-      |    |    |
-      d -- e -- f ...
-      |    |    |
-      .    .    .
+  a -- b -- c ...
+  |    |    |
+  d -- e -- f ...
+  |    |    |
+  .    .    .
 
   Each spring has two end points (a & b) defined as grid indices,
   as well as a rest length and strength (0.0 ... 1.0)."
   [cols rows rlen strength]
   (map
-    (fn[[a b]] {:a a :b b :restLength rlen :strength strength})
-    (concat
-      (for [yy (range 0 (* cols rows) cols) xx (range 1 cols)]
-        [(+ yy xx -1) (+ yy xx)])
-      (for [xx (range cols) yy (range cols (* cols rows) cols)]
-        [(+ yy xx (- cols)) (+ yy xx)]))))
+   (fn [[a b]] {:a a :b b :restLength rlen :strength strength})
+   (concat
+    (for [yy (range 0 (* cols rows) cols) xx (range 1 cols)]
+      [(+ yy xx -1) (+ yy xx)])
+    (for [xx (range cols) yy (range cols (* cols rows) cols)]
+      [(+ yy xx (- cols)) (+ yy xx)]))))
 
 (defn make-grid
   "Returns a map of particles & connection springs for the given specs."
   [& {:keys [x y w h cols rows rest-len strength]}]
   {:particles (vec (grid-particles x y w h cols rows))
-   :springs (grid-springs cols rows rest-len strength)
-   :rest-len rest-len
-   :cols cols
-   :rows rows})
+   :springs   (grid-springs cols rows rest-len strength)
+   :rest-len  rest-len
+   :cols      cols
+   :rows      rows})
 
 (defn grid-index
   "Computes grid index for the given `x` & `y` grid position and `stride` (grid width)."
@@ -73,11 +73,11 @@
   property of those grid points. Returns updated grid."
   [{:keys [cols rows] :as grid} coords locked?]
   (reduce
-    (fn [grid [x y]]
-      (assoc-in grid
-        [:particles (grid-index x y cols) :isLocked]
-        (if locked? 1 0)))
-    grid coords))
+   (fn [grid [x y]]
+     (assoc-in grid
+               [:particles (grid-index x y cols) :isLocked]
+               (if locked? 1 0)))
+   grid coords))
 
 (defn move-and-lock-particles
   "Takes a `grid` and a seq of `[x y ox oy]` vectors, then updates these
@@ -85,11 +85,11 @@
   `x` & `y` are grid positions, `ox` & `oy` are world space offsets."
   [{:keys [cols rows] :as grid} & particles]
   (reduce
-    (fn [grid [x y ox oy]]
-      (update-in grid [:particles (grid-index x y cols)]
-        (fn[{[px py] :pos :as p}]
-          (assoc p :pos [(+ px ox) (+ py oy)] :isLocked 1))))
-    grid particles))
+   (fn [grid [x y ox oy]]
+     (update-in grid [:particles (grid-index x y cols)]
+                (fn [{[px py] :pos :as p}]
+                  (assoc p :pos [(+ px ox) (+ py oy)] :isLocked 1))))
+   grid particles))
 
 (defn make-pipeline
   "Takes a state map of proconfigured OpenCL data structures and
@@ -109,16 +109,33 @@
   particle buffer, ensuring the OpenCL computation is complete before
   returning to Clojure."
   [{:keys [p-buf q-buf s-buf c-buf bounds gravity drag nump nums numc iter]}]
-  (ops/compile-pipeline :steps
-    (concat
-     [{:name "ParticleUpdate" :in [p-buf bounds gravity] :out q-buf
-       :n nump :write [:in :out] :args [[nump :int] [drag :float]]}]
-     [{:write s-buf}]
-     (ops/flipflop iter q-buf p-buf
-       {:name "SpringUpdate" :in [s-buf bounds] :n nums :args [[nums :int]]})
-     [{:write c-buf}]
-     [{:name "ConstrainParticles" :in [q-buf c-buf] :out p-buf
-       :n nump :read [:out] :args [[nump :int] [numc :int]]}])))
+  (ops/compile-pipeline
+   :steps (concat
+           [{:name "ParticleUpdate" :in [p-buf bounds gravity] :out q-buf
+             :n nump :write [:in :out] :args [[nump :int] [drag :float]]}]
+           [{:write s-buf}]
+           (ops/flipflop iter q-buf p-buf
+                         {:name "SpringUpdate" :in [s-buf bounds] :n nums :args [[nums :int]]})
+           [{:write c-buf}]
+           [{:name "ConstrainParticles" :in [q-buf c-buf] :out p-buf
+             :n nump :read [:out] :args [[nump :int] [numc :int]]}])))
+
+(defn update-pipeline
+  "Releases the current OpenCL particle & spring buffers and generates new ones for
+  the current particles/spring, then builds an updated OpenCL processing pipeline.
+  Returns updated physics state map."
+  [{:keys [cl-state grid p-struct s-struct p-buf s-buf] :as state}]
+  (cl/with-state cl-state
+    (cl/release p-buf s-buf)
+    (let [{:keys [particles springs]} grid
+          state (merge
+                 state
+                 (ops/init-buffers
+                  1 1
+                  :p-buf {:wrap (sg/encode p-struct {:particles particles})}
+                  :s-buf {:wrap (sg/encode s-struct {:springs springs}) :usage :readonly})
+                 {:nump (count particles) :nums (count springs)})]
+      (assoc state :pipeline (make-pipeline state)))))
 
 (defn init-physics
   "Initializes and returns a map of all OpenCL data structures required
@@ -130,41 +147,27 @@
   (let [cl-state (cl/init-state :device :cpu :program (clu/resource-stream program))]
     (cl/with-state cl-state
       (let [{:keys [particles springs]} grid
-            nump (count particles)
-            nums (count springs)
-            numc (count circles)
-            iter (ensure-odd iter)
+            nump     (count particles)
+            nums     (count springs)
+            numc     (count circles)
+            iter     (ensure-odd iter)
             p-struct (sg/make-struct :Particles [:particles :Particle2 nump])
             s-struct (sg/make-struct :Springs [:springs :Spring nums])
             c-struct (sg/make-struct :Circles [:circles :Circle numc])
-            state (merge
-                    {:cl-state cl-state
-                     :p-struct p-struct :s-struct s-struct :c-struct c-struct
-                     :drag drag :nump nump :nums nums :numc numc :iter iter
-                     :grid grid :circles circles}
-                    (ops/init-buffers 1 1
-                      :p-buf {:wrap (sg/encode p-struct {:particles particles})}
-                      :q-buf {:wrap (sg/encode p-struct {})}
-                      :s-buf {:wrap (sg/encode s-struct {:springs springs}) :usage :readonly}
-                      :c-buf {:wrap (sg/encode c-struct {:circles circles}) :usage :readonly}
-                      :bounds {:wrap bounds :type :float :usage :readonly}
-                      :gravity {:wrap gravity :type :float :usage :readonly}))]
+            state    (merge
+                      {:cl-state cl-state
+                       :p-struct p-struct :s-struct s-struct :c-struct c-struct
+                       :drag drag :nump nump :nums nums :numc numc :iter iter
+                       :grid grid :circles circles}
+                      (ops/init-buffers
+                       1 1
+                       :p-buf   {:wrap (sg/encode p-struct {:particles particles})}
+                       :q-buf   {:wrap (sg/encode p-struct {})}
+                       :s-buf   {:wrap (sg/encode s-struct {:springs springs}) :usage :readonly}
+                       :c-buf   {:wrap (sg/encode c-struct {:circles circles}) :usage :readonly}
+                       :bounds  {:wrap bounds :type :float :usage :readonly}
+                       :gravity {:wrap gravity :type :float :usage :readonly}))]
         (assoc state :pipeline (make-pipeline state))))))
-
-(defn update-pipeline
-  "Releases the current OpenCL particle & spring buffers and generates new ones for
-  the current particles/spring, then builds an updated OpenCL processing pipeline.
-  Returns updated physics state map."
-  [{:keys [cl-state grid p-struct s-struct p-buf s-buf] :as state}]
-  (cl/with-state cl-state
-    (cl/release p-buf s-buf)
-    (let [{:keys [particles springs]} grid
-          state (merge state
-                  (ops/init-buffers 1 1
-                    :p-buf {:wrap (sg/encode p-struct {:particles particles})}
-                    :s-buf {:wrap (sg/encode s-struct {:springs springs}) :usage :readonly})
-                  {:nump (count particles) :nums (count springs)})]
-      (assoc state :pipeline (make-pipeline state)))))
 
 (defn physics-time-step
   "Executes `iter` iterations of the current OpenCL processing pipeline."
@@ -172,7 +175,35 @@
   (dotimes [i iter]
     (when verbose? (prn i))
     (ops/execute-pipeline pipeline :verbose false :release false)
-    (.flush cl/*queue*)))
+    (cl/flush-queue)))
+
+(defn physics-state
+  "Initial state map & data structures for Verlet physics simulation."
+  []
+  (let [cols 400 rows 100
+        r3 (int (* rows 0.3333))
+        r23 (int (* rows 0.6666))
+        rmax (dec rows)
+        rest-len 5.0]
+    (init-physics
+     :program cl-program
+     :grid (-> (make-grid
+                :x 360 :y 100 :w 1200 :h (* rows rest-len 0.5)
+                :cols cols :rows rows
+                :rest-len rest-len :strength 0.95)
+               (lock-particles (map (fn [x] [x 0]) (range 4 cols 10)) true)
+               (move-and-lock-particles
+                [0 r3 -300 0] [(dec cols) r3 300 0]
+                [0 r23 -250 80] [(dec cols) r23 250 80]
+                [0 rmax -200 200] [(dec cols) rmax 200 200]
+                [50 rmax -100 300] [350 rmax 100 300]
+                [100 rmax -40 400] [300 rmax 50 400]
+                [200 rmax 0 450]))
+     :circles [{:pos [820 660] :radius 100} {:pos [1100 660] :radius 100}]
+     :bounds [0 0 1919 1079]
+     :gravity [0 0.25]
+     :drag 0.1
+     :iter 41)))
 
 (defn ^BufferedImage make-image
   "Creates a new ARGB BufferedImage of the given size."
@@ -181,22 +212,22 @@
 
 (defn save-image
   ([^BufferedImage img ^String path]
-    (save-image img "PNG" path))
+   (save-image img "PNG" path))
   ([^BufferedImage img ^String fmt ^String path]
-    (prn "saving image:" path)
-    (with-open [out (io/output-stream path)]
-      (ImageIO/write img fmt out))))
+   (prn "saving image:" path)
+   (with-open [out (io/output-stream path)]
+     (ImageIO/write img fmt out))))
 
 (defn ^Color as-color
   "Converts the scalar value `x` into a java.awt.Color instance
   using HSB colorspace mapping."
   [x alpha]
   (-> x
-    (Color/HSBtoRGB 1.0 1.0)
-    (bit-and 0xffffff)
-    (bit-or (bit-shift-left alpha 24))
-    (unchecked-int)
-    (Color. true)))
+      (Color/HSBtoRGB 1.0 1.0)
+      (bit-and 0xffffff)
+      (bit-or (bit-shift-left alpha 24))
+      (unchecked-int)
+      (Color. true)))
 
 (defn clear-image
   [^Graphics2D gfx width height]
@@ -212,40 +243,13 @@
   (let [particles (vec (:particles (sg/decode p-struct (cl/nio-buffer p-buf))))
         rlen (:rest-len grid)]
     (doseq [{sa :a sb :b} (:springs grid)]
-     (let [[ax ay] (:pos (particles sa))
-           [bx by] (:pos (particles sb))
-           dx (- bx ax)
-           dy (- by ay)
-           l (/ (Math/sqrt (+ (* dx dx) (* dy dy))) rlen)]
-       (.setPaint gfx (as-color l 0x80))
-       (.drawLine gfx (int ax) (int ay) (int bx) (int by))))))
-
-(def physics-state
-  "Initial state map & data structures for Verlet physics simulation."
-  (let [cols 400 rows 100
-        r3 (int (* rows 0.3333))
-        r23 (int (* rows 0.6666))
-        rmax (dec rows)
-        rest-len 5.0]
-    (init-physics
-      :program cl-program
-      :grid (-> (make-grid
-                  :x 360 :y 100 :w 1200 :h (* rows rest-len 0.5)
-                  :cols cols :rows rows
-                  :rest-len rest-len :strength 0.95)
-                (lock-particles (map (fn[x] [x 0]) (range 4 cols 10)) true)
-                (move-and-lock-particles
-                    [0 r3 -300 0] [(dec cols) r3 300 0]
-                    [0 r23 -250 80] [(dec cols) r23 250 80]
-                    [0 rmax -200 200] [(dec cols) rmax 200 200]
-                    [50 rmax -100 300] [350 rmax 100 300]
-                    [100 rmax -40 400] [300 rmax 50 400]
-                    [200 rmax 0 450]))
-      :circles [{:pos [820 660] :radius 100} {:pos [1100 660] :radius 100}]
-      :bounds [0 0 1919 1079]
-      :gravity [0 0.25]
-      :drag 0.99
-      :iter 41)))
+      (let [[ax ay] (:pos (particles sa))
+            [bx by] (:pos (particles sb))
+            dx (- bx ax)
+            dy (- by ay)
+            l (/ (Math/sqrt (+ (* dx dx) (* dy dy))) rlen)]
+        (.setPaint gfx (as-color l 0x80))
+        (.drawLine gfx (int ax) (int ay) (int bx) (int by))))))
 
 (defn run-sim
   [state from to step width height]
@@ -260,11 +264,11 @@
         (when-let [i (first iter)]
           (clear-image gfx width height)
           (render gfx state)
-          (save-image img (format "export/gridx-%04d.png" f))
-          (let [rows (get-in state [:grid :rows])
-                r3 (int (* rows 0.3333))
-                r23 (int (* rows 0.6666))
-                rmax (dec rows)
+          (save-image img (format "export/verlet-%04d.png" f))
+          (let [rows   (get-in state [:grid :rows])
+                r3     (int (* rows 0.3333))
+                r23    (int (* rows 0.6666))
+                rmax   (dec rows)
                 unlock (condp = i
                          200 [[200 rmax]]
                          230 [[100 rmax] [300 rmax]]
@@ -273,15 +277,15 @@
                          290 [[0 r23] [399 r23]]
                          300 [[0 r3] [399 r3]]
                          nil)
-                state (if (= i 305) (update-pipeline (assoc state :numc 0)) state)
-                state (if (seq unlock)
-                        (let [{:keys [p-struct p-buf grid]} state
-                              particles (:particles (sg/decode p-struct (cl/nio-buffer p-buf)))
-                              grid (assoc grid :particles particles)
-                              grid (lock-particles grid unlock false)]
-                          (update-pipeline (assoc state :grid grid)))
-                        state)]
+                state  (if (= i 305) (update-pipeline (assoc state :numc 0)) state)
+                state  (if (seq unlock)
+                         (let [{:keys [p-struct p-buf grid]} state
+                               particles (:particles (sg/decode p-struct (cl/nio-buffer p-buf)))
+                               grid (assoc grid :particles particles)
+                               grid (lock-particles grid unlock false)]
+                           (update-pipeline (assoc state :grid grid)))
+                         state)]
             (time (physics-time-step step (:pipeline state) false))
             (recur (rest iter) (inc f) state)))))))
 
-(defn -main [& args] (run-sim physics-state 5 600 5 1920 1080))
+(defn -main [& args] (run-sim (physics-state) 5 600 5 1920 1080))
