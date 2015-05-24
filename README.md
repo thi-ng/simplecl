@@ -33,8 +33,16 @@ Running the command below will run a basic
 particles & 80,000 springs and generate an image sequence of 120 PNGs
 in the `/export` sub-directory.
 
-```bash
+```shell
 lein with-profile test run -m thi.ng.simplecl.test.verlet
+```
+
+The image sequence can then be converted into an MP4 using this `ffmpeg` command:
+
+```shell
+ffmpeg -r 30 -f image2 -start_number 5 -i "export/verlet-%04d.png" \
+       -vcodec libx264 -preset slow -crf 23 -pix_fmt yuv420p \
+       -f mp4 -threads 0 verlet.mp4 -y
 ```
 
 A video of three different variations is here:
@@ -42,7 +50,8 @@ A video of three different variations is here:
 
 This demo is also showcasing usage & integration of the
 [structgen](http://thi.ng/structgen) partner library to ease the task
-of aligning nested data structures in an OpenCL compatible way.
+of aligning nested data structures in an OpenCL compatible way (mapping
+to OpenCL structs).
 
 ### 3D Strange attractor
 
