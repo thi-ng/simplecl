@@ -409,6 +409,11 @@
      :default
      (throw (IllegalArgumentException. (str "invalid type: " type))))))
 
+(defn flush-queue
+  "Flushes given CL command queue or if none specified uses `*queue*`."
+  ([] (flush-queue *queue*))
+  ([^CLCommandQueue q] (.flush q)))
+
 (defn ^CLKernel configure-kernel
   "Configures working buffers and other arguments for the given kernel.
 
