@@ -2,7 +2,7 @@
   "Misc utility functions used by other simplecl namespaces."
   ^{:author "Karsten Schmidt"}
   (:import
-    [java.io File])
+    [java.io File InputStream ByteArrayInputStream])
   (:require
     [clojure.java.io :as io]))
 
@@ -24,7 +24,10 @@
   [a b]
   (let [r (rem b a)] (if (zero? r) b (- (+ b a) r))))
 
-(defn ^java.io.InputStream resource-stream
+(defn ^InputStream str->stream
+  [^String x] (ByteArrayInputStream. (.getBytes x "UTF-8")))
+
+(defn ^InputStream resource-stream
   "Returns a `java.io.InputStream` for the given resource path."
   [name]
   (-> name io/resource io/input-stream))

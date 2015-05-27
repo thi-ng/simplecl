@@ -157,6 +157,11 @@
       :default
       (throw (IllegalArgumentException. "Argument is not a CLContext or CLPlatform")))))
 
+(defn device-name
+  "Returns the device name of the current `*device*` or given device arg."
+  ([] (.getName ^CLDevice *device*))
+  ([d] (.getName ^CLDevice d)))
+
 (defn max-workgroup-size
   "Returns the maximum local workgroup size for the given `kernel` and `device`.
   If the `device` is omitted, the current `*device*` is used by default."
