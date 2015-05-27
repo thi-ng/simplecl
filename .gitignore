@@ -1,0 +1,7 @@
+/export/*.png
+/target
+/.lein-*
+pom.xml*
+*~
+#*#
+*.mp4
