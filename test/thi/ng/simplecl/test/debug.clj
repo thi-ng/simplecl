@@ -1,39 +1,60 @@
 (ns thi.ng.simplecl.test.debug
   (:require
    [thi.ng.simplecl.core :as cl]
-   [thi.ng.simplecl.structs :as cs]
-   [thi.ng.simplecl.utils :as cu]
+   [thi.ng.simplecl.utils :as clu]
+   [thi.ng.simplecl.ops :as ops]
    [thi.ng.structgen.core :as sg]
    [thi.ng.structgen.parser :as sp]))
 
-(def ^:dynamic *verbose* false)
+(def debug-kernel
+  "#define OFFSETOF(type, field) ((unsigned long) &(((type*) 0)->field))
 
-(def progname "kernels/debug.cl")
+typedef struct {
+    float4   a;    // 0
+    int      b[8]; // 16
+    char     c[8]; // 48
+    float3   d;    // 64
+} Foo;
 
-(def s (cl/init-state :device :cpu :program (cu/resource-stream progname)))
+kernel void Debug(__global Foo* in,
+                  __global Foo* out,
+                  const unsigned int n,
+                  const float deltaSq) {
+	unsigned int id = get_global_id(0);
+	if (id < n) {
+		global Foo *p = &out[id];
+		p->a = (float4)(OFFSETOF(Foo, b),
+		                OFFSETOF(Foo, c),
+		                OFFSETOF(Foo, d),
+		                (sizeof *p));
+	}
+}")
 
-(reset-registry!)
-(register! (sp/parse-specs (slurp (cu/resource-stream progname))))
+(def state (cl/init-state :device :cpu :program (clu/str->stream debug-kernel)))
 
-;;(def foo (sg/lookup :Foo))
-(def foo (sg/make-struct :Bar [:foo :Foo 4]))
+(sg/reset-registry!)
+(sg/register! (sp/parse-specs (slurp (clu/str->stream debug-kernel))))
 
-(def pbuf (sg/encode foo {}))
-(def qbuf (sg/encode foo {}))
+(def bar (sg/make-struct :Bar [:foo :Foo 4]))
 
-(cl/with-state s
+(def pbuf (sg/encode bar {}))
+(def qbuf (sg/encode bar {}))
+
+(cl/with-state state
 
   (println "build log:" (cl/build-log))
 
   (let [pclbuf (cl/as-clbuffer pbuf)
         qclbuf (cl/as-clbuffer qbuf :writeonly)
-        pipe   (cl/compile-pipeline
+        n      (-> bar sg/struct-spec :foo sg/length)
+        _      (println :n n :sizeof (sg/sizeof bar))
+        pipe   (ops/compile-pipeline
                 :steps [{:name  "Debug"
                          :in    pclbuf
                          :out   qclbuf
-                         :n     (sg/length (:foo (sg/struct-spec foo)))
+                         :n     n
                          :write [:in :out]
                          :read  [:out]
-                         :args  [[(sg/length (:foo (sg/struct-spec foo))) :int] [0.5 :float]]}])]
+                         :args  [[n :int] [0.5 :float]]}])]
     
-    (sg/decode foo (cl/execute-pipeline pipe :verbose true))))
+    (println (sg/decode bar (ops/execute-pipeline pipe :verbose true)))))

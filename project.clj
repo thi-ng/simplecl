@@ -13,13 +13,12 @@
                  [org.jogamp.jocl/jocl-main "2.3.1"]
                  [org.jogamp.jocl/jocl "2.3.1" :native-prefix ""]]
 
-  :profiles     {:dev {:dependencies [[criterium "0.4.3"]]
+  :profiles     {:dev {:dependencies [[thi.ng/structgen "0.2.1"]
+                                      [criterium "0.4.3"]]
+                       :resource-paths ["dev-resources"]
+                       :jvm-opts ^:replace ["-Xms512m" "-Xmx2g"]
                        :global-vars {*warn-on-reflection* true}
-                       :jvm-opts ^:replace []
-                       :aliases {"cleantest" ["do" "clean," "test"]}}
-                 :test {:dependencies [[thi.ng/structgen "0.2.1"]]
-                        :resource-paths ["dev-resources"]
-                        :jvm-opts ["-Xms512m" "-Xmx2g"]}}
+                       :aliases {"cleantest" ["do" "clean," "test"]}}}
 
   :pom-addition [:developers [:developer
                               [:name "Karsten Schmidt"]
