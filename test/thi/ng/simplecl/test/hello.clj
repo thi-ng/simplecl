@@ -44,6 +44,8 @@
             (cl/buffer-seq)
             (verify num))))))
 
-;;(hello-cl :num 1024 :device :cpu)
-;;(hello-cl :num 1024 :device :gpu)
-(hello-cl :num 1024)
+(defn -main
+  [& [device]]
+  ;;(hello-cl :num 1024 :device :cpu)
+  ;;(hello-cl :num 1024 :device :gpu)
+  (hello-cl :num 1024 :device (keyword device)))

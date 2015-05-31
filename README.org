@@ -33,7 +33,12 @@ steps to run this on either CPU or GPU devices (by default the most
 performant is chosen automatically):
 
 #+BEGIN_SRC 
-lein run -m thi.ng.simplecl.test.hello
+;; chooses max performance device
+lein trampoline run -m thi.ng.simplecl.test.hello
+
+;; or force usage of given device type
+lein trampoline run -m thi.ng.simplecl.test.hello gpu
+lein trampoline run -m thi.ng.simplecl.test.hello cpu
 #+END_SRC
 
 *** Verlet cloth sim
@@ -43,7 +48,7 @@ Running the command below will run a basic [[test/thi/ng/simplecl/test/verlet.cl
 120 PNGs in the =/export= sub-directory.
 
 #+BEGIN_SRC 
-lein run -m thi.ng.simplecl.test.verlet
+lein trampoline run -m thi.ng.simplecl.test.verlet
 #+END_SRC
 
 The image sequence can then be converted into an MP4 using this `ffmpeg` command:
