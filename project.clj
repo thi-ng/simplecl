@@ -1,4 +1,4 @@
-(defproject thi.ng/simplecl "0.2.0"
+(defproject thi.ng/simplecl "0.2.1"
   :description "Clojure wrapper & highlevel processing pipeline ops for JOCL/OpenCL."
   :url          "http://thi.ng/structgen"
   :license      {:name "Apache Software License 2.0"
@@ -18,7 +18,7 @@
                        :resource-paths ["dev-resources"]
                        :jvm-opts ^:replace ["-Xms512m" "-Xmx2g"]
                        :global-vars {*warn-on-reflection* true}
-                       :aliases {"cleantest" ["do" "clean," "test"]}}}
+                       :aliases {"cleantest" ["do" "clean" "test"]}}}
 
   :pom-addition [:developers [:developer
                               [:name "Karsten Schmidt"]
