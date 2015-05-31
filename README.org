@@ -18,7 +18,7 @@ documented.
 ** Leiningen coordinates
 
 #+BEGIN_SRC clojure
-[thi.ng/simplecl "0.2.1"]
+[thi.ng/simplecl "0.2.2"]
 #+END_SRC
 
 ** Usage & examples
