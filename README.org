@@ -59,11 +59,10 @@ ffmpeg -r 30 -f image2 -start_number 5 -i "export/verlet-%04d.png" \
        -f mp4 -threads 0 verlet.mp4 -y
 #+END_SRC
 
-A video of three different variations is here: [[http://media.thi.ng/2012/simplecl/20121208-gridx-hd720.mp4][verlet-cloth-sim.mp4]]
-
-This demo is also showcasing usage & integration of the [[http://thi.ng/structgen][structgen]]
-partner library to ease the task of aligning nested Clojure data
-structures in an OpenCL compatible way (mapping to OpenCL structs).
+This demo is also showcasing usage & integration of the
+[[http://thi.ng/structgen][structgen]] partner library to ease the task of
+aligning nested Clojure data structures in an OpenCL compatible way (mapping to
+OpenCL structs).
 
 *** Voxel raymarching
 
@@ -78,9 +77,6 @@ A sneak peak of an upcoming example kernel pipeline to:
 3. map the result points onto the surface of a sphere and
 4. apply a 3D distortion filter to all points
 5. do a standard 3d > 2d camera-screen projection
-
-A short video fragment: [[http://media.thi.ng/2012/simplecl/20121205-attractor-grad-hd720.mp4][attractor.mp4]] (10M points/frame,
-~780-840ms/frame)
 
 More examples & documentation will be added ASAP.
 
